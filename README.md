@@ -1,3 +1,12 @@
+---
+title: InterOrdra MCP
+emoji: 🔍
+colorFrom: purple
+colorTo: blue
+sdk: docker
+pinned: false
+---
+<<<<<<< HEAD
 # InterOrdra MCP Server
 
 **Semantic gap detection tool for AI agents.**
@@ -157,3 +166,17 @@ AI Software Engineer · Costa Rica
 ## License
 
 MIT
+=======
+---
+title: Interordra Mcp
+emoji: 🌍
+colorFrom: green
+colorTo: yellow
+sdk: docker
+pinned: false
+license: mit
+short_description: Semantic gap detection tool for AI agents
+---
+
+Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
+>>>>>>> 8c37f718cb69a92f8c4da052f9df49d372a0e21a
