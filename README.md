@@ -5,8 +5,10 @@ colorFrom: purple
 colorTo: blue
 sdk: docker
 pinned: false
+license: mit
+short_description: Semantic gap detection tool for AI agents
 ---
-<<<<<<< HEAD
+
 # InterOrdra MCP Server
 
 **Semantic gap detection tool for AI agents.**
@@ -17,24 +19,35 @@ Built as an MCP server so any agent can use it.
 
 ---
 
-## Requirements
+## When to use InterOrdra
 
-- Python 3.10+
-- `ANTHROPIC_API_KEY` environment variable set with your own key
+**Call `detectar_gap` when:**
+- A question and its answer seem disconnected or off-topic
+- Two teams are not reaching agreement despite communicating
+- You need to verify if two concepts belong to the same semantic space
+- A user's request and the system's response are misaligned
+- You suspect a conversation is failing due to conceptual distance, not lack of information
 
-```bash
-pip install fastmcp anthropic
-```
+**Call `reformular_pregunta` when:**
+- A question is too vague to answer well
+- The real need behind a request is unclear
+- A user keeps asking the same thing in different ways without getting satisfaction
+- You want to surface the underlying problem before answering
 
-> **Note:** InterOrdra uses your own Anthropic API key. The author does not pay for your usage.
+**Call `analizar_conversacion` when:**
+- A multi-turn conversation is drifting and losing coherence
+- You need to find the exact point where alignment broke down
+- An agent pipeline is producing inconsistent outputs across turns
+- You want to diagnose why a negotiation or discussion failed
 
 ---
 
 ## Tools
 
 ### `detectar_gap`
-Detects semantic gaps between two texts using real embeddings (Voyage AI via Anthropic). Returns a gap score, severity level, and vocabulary unique to each text.
+Detects semantic gaps between two texts using real embeddings. Returns a gap score (0 = no gap, 1 = complete disconnection), severity level, and vocabulary unique to each text.
 
+**Input:**
 ```json
 {
   "texto_a": "the server is not responding to network requests",
@@ -55,11 +68,17 @@ Detects semantic gaps between two texts using real embeddings (Voyage AI via Ant
 }
 ```
 
+**Gap score interpretation:**
+- `0.0 – 0.3` → Low gap. Texts share enough meaning.
+- `0.3 – 0.6` → Medium gap. Partial disconnection. Misunderstandings likely.
+- `0.6 – 1.0` → High gap. Texts operate in completely different conceptual worlds.
+
 ---
 
 ### `reformular_pregunta`
 Takes a question and generates three alternative framings using Claude to surface the real need behind it. Based on the Question Reframe method.
 
+**Input:**
 ```json
 {
   "pregunta": "why doesn't anyone understand me"
@@ -75,7 +94,7 @@ Takes a question and generates three alternative framings using Claude to surfac
     "What would it look like if someone truly understood you — what would change?",
     "Which part of your message consistently gets lost or misinterpreted?"
   ],
-  "instruccion": "Usa estas variantes para explorar el gap entre lo que se pregunta y lo que se necesita."
+  "instruccion": "Use these variants to explore the gap between what is asked and what is needed."
 }
 ```
 
@@ -84,6 +103,7 @@ Takes a question and generates three alternative framings using Claude to surfac
 ### `analizar_conversacion`
 Analyzes a sequence of messages to detect accumulating semantic gaps. Identifies where a conversation starts drifting apart.
 
+**Input:**
 ```json
 {
   "mensajes": [
@@ -111,6 +131,19 @@ Analyzes a sequence of messages to detect accumulating semantic gaps. Identifies
 
 ---
 
+## Requirements
+
+- Python 3.10+
+- `ANTHROPIC_API_KEY` environment variable set with your own key
+
+```bash
+pip install fastmcp anthropic
+```
+
+> **Note:** InterOrdra uses your own Anthropic API key. The author does not pay for your usage.
+
+---
+
 ## Connect to Claude Desktop
 
 Add to your `claude_desktop_config.json`:
@@ -129,19 +162,13 @@ Add to your `claude_desktop_config.json`:
 }
 ```
 
-Replace `/path/to/server.py` with the actual path and add your own API key.
-
-Restart Claude Desktop. InterOrdra will appear as an available tool.
+Replace `/path/to/server.py` with the actual path. Restart Claude Desktop — InterOrdra will appear as an available tool.
 
 ---
 
-## Use cases
+## Connect via Smithery
 
-- Detect misalignment between a question and its answer
-- Identify when two teams are operating in disconnected conceptual frameworks
-- Surface semantic gaps in multi-agent pipelines
-- Analyze conversations to find where the thread breaks
-- Reframe questions to uncover the real underlying need
+Available at [smithery.ai](https://smithery.ai/server/interordra-mcp--rosibisdev)
 
 ---
 
@@ -166,17 +193,3 @@ AI Software Engineer · Costa Rica
 ## License
 
 MIT
-=======
----
-title: Interordra Mcp
-emoji: 🌍
-colorFrom: green
-colorTo: yellow
-sdk: docker
-pinned: false
-license: mit
-short_description: Semantic gap detection tool for AI agents
----
-
-Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
->>>>>>> 8c37f718cb69a92f8c4da052f9df49d372a0e21a
