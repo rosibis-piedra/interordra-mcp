@@ -1,26 +1,27 @@
+configSchema:
+  type: object
+  title: InterOrdra Configuration
+  properties:
+    anthropicApiKey:
+      type: string
+      title: Anthropic API Key
+      description: >
+        Your Anthropic API key. Used to call Claude for question reframing
+        and to authenticate with Voyage AI for semantic embeddings.
+      format: password
+    voyageApiKey:
+      type: string
+      title: Voyage AI API Key
+      description: >
+        Optional dedicated Voyage AI API key. If not provided, InterOrdra
+        will attempt to use the Anthropic API key with the Voyage AI endpoint.
+        Providing this key can improve embedding reliability.
+      format: password
+  required:
+    - anthropicApiKey
+
 startCommand:
   type: stdio
-  configSchema:
-    type: object
-    title: InterOrdra Configuration
-    properties:
-      anthropicApiKey:
-        type: string
-        title: Anthropic API Key
-        description: >
-          Your Anthropic API key. Used to call Claude for question reframing
-          and to authenticate with Voyage AI for semantic embeddings.
-        x-sensitive: true
-      voyageApiKey:
-        type: string
-        title: Voyage AI API Key (optional)
-        description: >
-          Optional dedicated Voyage AI API key. If not provided, InterOrdra
-          will attempt to use the Anthropic API key with the Voyage AI endpoint.
-          Providing this key can improve embedding reliability.
-        x-sensitive: true
-    required:
-      - anthropicApiKey
   commandFunction: |-
     (config) => ({
       command: "python",
