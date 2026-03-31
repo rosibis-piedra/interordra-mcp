@@ -1,15 +1,28 @@
 import os
 import math
+from typing import Annotated
 from fastmcp import FastMCP
 import anthropic
+from mcp.types import ToolAnnotations
+from pydantic import Field
 
 # ─────────────────────────────────────────
-#  InterOrdra MCP Server — v0.2
+#  InterOrdra MCP Server — v0.3
 #  Semantic gap detection using real embeddings
 #  API key provided by the user, not the author
 # ─────────────────────────────────────────
 
-mcp = FastMCP(name="InterOrdra")
+mcp = FastMCP(
+    name="InterOrdra",
+    instructions=(
+        "Semantic gap detection tool for AI agents. "
+        "Detects when two systems are communicating without truly understanding each other "
+        "by measuring semantic distance between texts. "
+        "Use detectar_gap to measure the semantic distance between two texts, "
+        "reformular_pregunta to surface the real need behind a vague question, "
+        "and analizar_conversacion to find where a multi-turn conversation loses coherence."
+    ),
+)
 
 
 def get_client():
@@ -100,8 +113,11 @@ def semantic_similarity(text_a: str, text_b: str) -> float:
         return len(intersection) / len(union)
 
 
-@mcp.tool
-def detectar_gap(texto_a: str, texto_b: str) -> dict:
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True))
+def detectar_gap(
+    texto_a: Annotated[str, Field(description="First text to compare. Can be a sentence, paragraph, question, or concept description.")],
+    texto_b: Annotated[str, Field(description="Second text to compare. The semantic distance between this and texto_a will be measured and scored from 0 (no gap) to 1 (complete disconnection).")],
+) -> dict:
     """
     Detects semantic gap between two texts using real embeddings.
     Returns gap score (0 = no gap, 1 = complete disconnection),
@@ -138,8 +154,10 @@ def detectar_gap(texto_a: str, texto_b: str) -> dict:
     }
 
 
-@mcp.tool
-def reformular_pregunta(pregunta: str) -> dict:
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=False))
+def reformular_pregunta(
+    pregunta: Annotated[str, Field(description="The question or request to reframe. Works best with vague, unclear, or repetitive questions where the underlying need is not obvious.")],
+) -> dict:
     """
     Takes a question and generates alternative framings to surface
     the real need behind it. Based on the Question Reframe method.
@@ -157,7 +175,7 @@ Respond only in JSON format:
 {
   "variantes": [
     "reframing 1",
-    "reframing 2", 
+    "reframing 2",
     "reframing 3"
   ]
 }
@@ -187,8 +205,10 @@ Respond in the same language as the input question.""",
     }
 
 
-@mcp.tool
-def analizar_conversacion(mensajes: list[str]) -> dict:
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True))
+def analizar_conversacion(
+    mensajes: Annotated[list[str], Field(description="List of messages in chronological order. Minimum 2 messages required. Each message should be a string representing one turn in the conversation.")],
+) -> dict:
     """
     Analyzes a sequence of messages to detect accumulating semantic gaps.
     Useful for identifying when a conversation is drifting apart.
@@ -221,6 +241,50 @@ def analizar_conversacion(mensajes: list[str]) -> dict:
             else "Conversación gravemente desacoplada"
         )
     }
+
+
+@mcp.prompt
+def gap_detection_prompt(
+    texto_a: Annotated[str, Field(description="First text to compare")],
+    texto_b: Annotated[str, Field(description="Second text to compare")],
+) -> str:
+    """Prompt to detect and explain the semantic gap between two texts."""
+    return (
+        f"Detect the semantic gap between these two texts and explain what is causing the disconnection.\n\n"
+        f"Text A: {texto_a}\n\n"
+        f"Text B: {texto_b}\n\n"
+        f"Use the detectar_gap tool to measure the semantic distance, then explain what conceptual worlds "
+        f"each text belongs to and why they are failing to connect."
+    )
+
+
+@mcp.prompt
+def conversation_analysis_prompt(
+    contexto: Annotated[str, Field(description="Brief description of what the conversation is about")] = "",
+) -> str:
+    """Prompt to analyze semantic drift across a conversation."""
+    context_line = f" about: {contexto}" if contexto else ""
+    return (
+        f"Analyze the semantic drift in a conversation{context_line}.\n\n"
+        f"Instructions:\n"
+        f"1. Collect the messages from the conversation in chronological order\n"
+        f"2. Use the analizar_conversacion tool with those messages\n"
+        f"3. Identify the critical breakpoint where alignment was lost\n"
+        f"4. Suggest how to reconnect the conversation from that point"
+    )
+
+
+@mcp.prompt
+def question_reframe_prompt(
+    pregunta: Annotated[str, Field(description="The question or request to explore")],
+) -> str:
+    """Prompt to reframe a question and surface the underlying need."""
+    return (
+        f"The following question may be hiding a deeper need: '{pregunta}'\n\n"
+        f"Use the reformular_pregunta tool to generate alternative framings, "
+        f"then recommend which reframing best captures the real underlying problem "
+        f"and explain why the original question may have been creating a semantic gap."
+    )
 
 
 if __name__ == "__main__":
