@@ -1,3 +1,5 @@
+homepage: https://github.com/rosibis-piedra/interordra
+
 configSchema:
   type: object
   title: InterOrdra Configuration
