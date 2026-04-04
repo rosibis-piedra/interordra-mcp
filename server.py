@@ -287,5 +287,49 @@ def question_reframe_prompt(
     )
 
 
+SERVER_CARD = {
+    "qualityVersion": 1,
+    "name": "InterOrdra",
+    "description": (
+        "Semantic gap detection tool for AI agents. Detects when two systems are "
+        "communicating without truly understanding each other by measuring semantic "
+        "distance between texts."
+    ),
+    "homepage": "https://github.com/rosibis-piedra/interordra",
+    "icon": "https://avatars.githubusercontent.com/u/rosibis-piedra",
+    "configSchema": {
+        "type": "object",
+        "title": "InterOrdra Configuration",
+        "properties": {
+            "anthropicApiKey": {
+                "type": "string",
+                "title": "Anthropic API Key",
+                "description": (
+                    "Your Anthropic API key. Used to call Claude for question reframing "
+                    "and to authenticate with Voyage AI for semantic embeddings."
+                ),
+                "x-sensitive": True,
+            },
+            "voyageApiKey": {
+                "type": "string",
+                "title": "Voyage AI API Key (optional)",
+                "description": (
+                    "Optional dedicated Voyage AI API key. If not provided, InterOrdra "
+                    "will use the Anthropic API key with the Voyage AI endpoint."
+                ),
+                "x-sensitive": True,
+            },
+        },
+        "required": ["anthropicApiKey"],
+    },
+}
+
+
+@mcp.custom_route("/.well-known/mcp/server-card.json", methods=["GET"])
+async def serve_server_card(request):
+    from starlette.responses import JSONResponse
+    return JSONResponse(SERVER_CARD)
+
+
 if __name__ == "__main__":
     mcp.run(transport="streamable-http", host="0.0.0.0", port=7860)
