@@ -11,6 +11,8 @@ short_description: Semantic gap detection tool for AI agents
 
 # InterOrdra MCP Server
 
+[![smithery badge](https://smithery.ai/badge/rosibisdev/interordra-mcp)](https://smithery.ai/servers/rosibisdev/interordra-mcp)
+
 **Semantic gap detection tool for AI agents.**
 
 InterOrdra detects when two systems are talking without listening to each other — measuring the semantic distance between texts and surfacing the invisible disconnections that cause miscommunication, misalignment, and failed coordination.
