@@ -9,45 +9,82 @@ license: mit
 short_description: Semantic gap detection tool for AI agents
 ---
 
-# InterOrdra MCP Server
+# InterOrdra MCP
 
 [![smithery badge](https://smithery.ai/badge/rosibisdev/interordra-mcp)](https://smithery.ai/servers/rosibisdev/interordra-mcp)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Semantic gap detection tool for AI agents.**
+**Measure semantic distance between texts. Detect misalignment before it becomes a problem.**
 
-InterOrdra detects when two systems are talking without listening to each other — measuring the semantic distance between texts and surfacing the invisible disconnections that cause miscommunication, misalignment, and failed coordination.
+InterOrdra is an MCP server that tells you — with a number — how far apart two pieces of text are conceptually. Not just keyword overlap: real semantic distance using embeddings.
 
-Built as an MCP server so any agent can use it.
+Built for AI agents, pipelines, and developers who need to know when a conversation, a retrieval, or a response is failing silently.
 
 ---
 
-## When to use InterOrdra
+## The problem it solves
+
+Two things can be syntactically connected but semantically worlds apart:
+
+- A user asks about X. Your agent responds about Y. Nobody notices.
+- Your RAG pipeline retrieves documents. They don't actually answer the query. The LLM hallucinates to fill the gap.
+- A negotiation goes on for hours. The parties are never talking about the same thing.
+- A user rephrases the same question 5 times. The system keeps missing the real need.
+
+InterOrdra surfaces these gaps. It gives you a score from 0 (fully aligned) to 1 (completely disconnected), the severity level, and the vocabulary unique to each side.
+
+---
+
+## Connect via Smithery (recommended)
+
+No setup required. Works with any MCP-compatible client.
+
+[![Connect on Smithery](https://smithery.ai/badge/rosibisdev/interordra-mcp)](https://smithery.ai/servers/rosibisdev/interordra-mcp)
+
+You'll need your own `ANTHROPIC_API_KEY`. Smithery will prompt you for it on connect.
+
+---
+
+## Use cases
+
+| Scenario | Tool to call |
+|---|---|
+| Check if an LLM answer is relevant to the question | `detectar_gap` |
+| Validate RAG retrieval — does the doc actually answer the query? | `detectar_gap` |
+| Two agents in a pipeline producing disconnected outputs | `detectar_gap` |
+| User keeps rephrasing the same question unsatisfied | `reformular_pregunta` |
+| Find the real need behind a vague request | `reformular_pregunta` |
+| Multi-turn conversation drifting and losing coherence | `analizar_conversacion` |
+| Diagnose why a negotiation or discussion failed | `analizar_conversacion` |
+| Detect misalignment between two team members' messages | `analizar_conversacion` |
+
+---
+
+## When to call each tool
 
 **Call `detectar_gap` when:**
-- A question and its answer seem disconnected or off-topic
-- Two teams are not reaching agreement despite communicating
-- You need to verify if two concepts belong to the same semantic space
-- A user's request and the system's response are misaligned
-- You suspect a conversation is failing due to conceptual distance, not lack of information
+- A question and its answer seem off-topic or disconnected
+- You need a numeric score for semantic similarity between two texts
+- You're building a relevance filter for retrieval-augmented generation
+- Two concepts need to be verified as belonging to the same semantic space
 
 **Call `reformular_pregunta` when:**
 - A question is too vague to answer well
-- The real need behind a request is unclear
-- A user keeps asking the same thing in different ways without getting satisfaction
-- You want to surface the underlying problem before answering
+- A user keeps asking the same thing without getting satisfaction
+- You need to surface the underlying problem before responding
 
 **Call `analizar_conversacion` when:**
 - A multi-turn conversation is drifting and losing coherence
-- You need to find the exact point where alignment broke down
+- You need to find the exact turn where alignment broke down
 - An agent pipeline is producing inconsistent outputs across turns
-- You want to diagnose why a negotiation or discussion failed
 
 ---
 
 ## Tools
 
 ### `detectar_gap`
-Detects semantic gaps between two texts using real embeddings. Returns a gap score (0 = no gap, 1 = complete disconnection), severity level, and vocabulary unique to each text.
+
+Measures semantic distance between two texts using embeddings. Returns a gap score, severity level, and the vocabulary unique to each text.
 
 **Input:**
 ```json
@@ -70,15 +107,16 @@ Detects semantic gaps between two texts using real embeddings. Returns a gap sco
 }
 ```
 
-**Gap score interpretation:**
-- `0.0 – 0.3` → Low gap. Texts share enough meaning.
-- `0.3 – 0.6` → Medium gap. Partial disconnection. Misunderstandings likely.
-- `0.6 – 1.0` → High gap. Texts operate in completely different conceptual worlds.
+**Gap score:**
+- `0.0 – 0.3` → Low. Texts share enough meaning.
+- `0.3 – 0.6` → Medium. Partial disconnection. Misunderstandings likely.
+- `0.6 – 1.0` → High. Texts operate in completely different conceptual worlds.
 
 ---
 
 ### `reformular_pregunta`
-Takes a question and generates three alternative framings using Claude to surface the real need behind it. Based on the Question Reframe method.
+
+Takes a question and returns three alternative framings that surface the real need behind it. Uses Claude.
 
 **Input:**
 ```json
@@ -103,7 +141,8 @@ Takes a question and generates three alternative framings using Claude to surfac
 ---
 
 ### `analizar_conversacion`
-Analyzes a sequence of messages to detect accumulating semantic gaps. Identifies where a conversation starts drifting apart.
+
+Analyzes a sequence of messages to detect accumulating semantic gaps. Finds where a conversation starts drifting apart.
 
 **Input:**
 ```json
@@ -133,22 +172,16 @@ Analyzes a sequence of messages to detect accumulating semantic gaps. Identifies
 
 ---
 
-## Requirements
+## Self-host
 
-- Python 3.10+
-- `ANTHROPIC_API_KEY` environment variable set with your own key
+**Requirements:** Python 3.10+ · Your own `ANTHROPIC_API_KEY`
 
 ```bash
 pip install fastmcp anthropic
+python server.py
 ```
 
-> **Note:** InterOrdra uses your own Anthropic API key. The author does not pay for your usage.
-
----
-
-## Connect to Claude Desktop
-
-Add to your `claude_desktop_config.json`:
+**Claude Desktop** — add to `claude_desktop_config.json`:
 
 ```json
 {
@@ -164,19 +197,13 @@ Add to your `claude_desktop_config.json`:
 }
 ```
 
-Replace `/path/to/server.py` with the actual path. Restart Claude Desktop — InterOrdra will appear as an available tool.
-
----
-
-## Connect via Smithery
-
-Available at [smithery.ai](https://smithery.ai/server/interordra-mcp--rosibisdev)
+> InterOrdra uses your own Anthropic API key. The author does not pay for your usage.
 
 ---
 
 ## Background
 
-InterOrdra emerged from a pattern: seeing where two systems are broadcasting on completely different frequencies — technically communicating, actually disconnected.
+InterOrdra emerged from a pattern: two systems broadcasting on completely different frequencies — technically communicating, actually disconnected.
 
 The name comes from *inter* (between) + *ordra* (order/structure) — the space between ordered systems where gaps live.
 

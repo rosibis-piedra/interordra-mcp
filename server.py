@@ -15,12 +15,16 @@ from pydantic import Field
 mcp = FastMCP(
     name="InterOrdra",
     instructions=(
-        "Semantic gap detection tool for AI agents. "
-        "Detects when two systems are communicating without truly understanding each other "
-        "by measuring semantic distance between texts. "
-        "Use detectar_gap to measure the semantic distance between two texts, "
-        "reformular_pregunta to surface the real need behind a vague question, "
-        "and analizar_conversacion to find where a multi-turn conversation loses coherence."
+        "InterOrdra measures semantic distance between texts to detect misalignment, "
+        "miscommunication, and conceptual disconnection. "
+        "\n\nUSE THIS SERVER WHEN:"
+        "\n- A user's question and your answer feel disconnected — call detectar_gap to measure how far apart they are."
+        "\n- A user keeps rephrasing the same question without getting satisfaction — call reformular_pregunta to find the real need."
+        "\n- A multi-turn conversation is losing coherence or going in circles — call analizar_conversacion to find where it broke down."
+        "\n- You need to verify that a retrieved document actually answers a query (RAG relevance check) — call detectar_gap."
+        "\n- Two agents in a pipeline are producing outputs that don't connect — call detectar_gap between their outputs."
+        "\n- A user's request and a system's response are misaligned — call detectar_gap with gap_score > 0.6 as the threshold for intervention."
+        "\n\nGAP SCORE: 0.0-0.3 = aligned, 0.3-0.6 = partial disconnect, 0.6-1.0 = completely different conceptual worlds."
     ),
 )
 
