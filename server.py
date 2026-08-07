@@ -117,7 +117,12 @@ def semantic_similarity(text_a: str, text_b: str) -> float:
         return len(intersection) / len(union)
 
 
-@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True))
+@mcp.tool(annotations=ToolAnnotations(
+    readOnlyHint=True,
+    destructiveHint=False,
+    idempotentHint=True,
+    openWorldHint=True,
+))
 def detectar_gap(
     texto_a: Annotated[str, Field(description="First text to compare. Can be a sentence, paragraph, question, or concept description.")],
     texto_b: Annotated[str, Field(description="Second text to compare. The semantic distance between this and texto_a will be measured and scored from 0 (no gap) to 1 (complete disconnection).")],
@@ -128,37 +133,45 @@ def detectar_gap(
     severity level, and vocabulary unique to each text.
     Requires ANTHROPIC_API_KEY environment variable.
     """
-    similarity = semantic_similarity(texto_a, texto_b)
-    gap_score = round(1 - similarity, 2)
+    try:
+        similarity = semantic_similarity(texto_a, texto_b)
+        gap_score = round(1 - similarity, 2)
 
-    # Lexical analysis for vocabulary insights
-    palabras_a = set(texto_a.lower().split())
-    palabras_b = set(texto_b.lower().split())
-    solo_en_a = palabras_a - palabras_b
-    solo_en_b = palabras_b - palabras_a
+        # Lexical analysis for vocabulary insights
+        palabras_a = set(texto_a.lower().split())
+        palabras_b = set(texto_b.lower().split())
+        solo_en_a = palabras_a - palabras_b
+        solo_en_b = palabras_b - palabras_a
 
-    if gap_score < 0.3:
-        nivel = "bajo"
-        mensaje = "Los textos comparten suficiente significado. Gap mínimo."
-    elif gap_score < 0.6:
-        nivel = "medio"
-        mensaje = "Existe desconexión parcial. Puede haber malentendidos."
-    else:
-        nivel = "alto"
-        mensaje = "Gap semántico significativo. Los textos hablan de mundos distintos."
+        if gap_score < 0.3:
+            nivel = "bajo"
+            mensaje = "Los textos comparten suficiente significado. Gap mínimo."
+        elif gap_score < 0.6:
+            nivel = "medio"
+            mensaje = "Existe desconexión parcial. Puede haber malentendidos."
+        else:
+            nivel = "alto"
+            mensaje = "Gap semántico significativo. Los textos hablan de mundos distintos."
 
-    return {
-        "gap_score": gap_score,
-        "nivel": nivel,
-        "mensaje": mensaje,
-        "similaridad_semantica": round(similarity, 2),
-        "palabras_solo_en_A": list(solo_en_a)[:5],
-        "palabras_solo_en_B": list(solo_en_b)[:5],
-        "metodo": "embeddings" if gap_score != round(1 - len(palabras_a & palabras_b) / len(palabras_a | palabras_b) if palabras_a | palabras_b else 1, 2) else "lexical_fallback"
-    }
+        return {
+            "gap_score": gap_score,
+            "nivel": nivel,
+            "mensaje": mensaje,
+            "similaridad_semantica": round(similarity, 2),
+            "palabras_solo_en_A": list(solo_en_a)[:5],
+            "palabras_solo_en_B": list(solo_en_b)[:5],
+            "metodo": "embeddings" if gap_score != round(1 - len(palabras_a & palabras_b) / len(palabras_a | palabras_b) if palabras_a | palabras_b else 1, 2) else "lexical_fallback"
+        }
+    except Exception as e:
+        return {"error": True, "mensaje": f"Error al detectar el gap semántico: {e}"}
 
 
-@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=False))
+@mcp.tool(annotations=ToolAnnotations(
+    readOnlyHint=True,
+    destructiveHint=False,
+    idempotentHint=False,
+    openWorldHint=True,
+))
 def reformular_pregunta(
     pregunta: Annotated[str, Field(description="The question or request to reframe. Works best with vague, unclear, or repetitive questions where the underlying need is not obvious.")],
 ) -> dict:
@@ -169,11 +182,12 @@ def reformular_pregunta(
     Requires ANTHROPIC_API_KEY environment variable.
     """
     try:
-        client = get_client()
-        response = client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=500,
-            system="""You are InterOrdra's Question Reframe engine.
+        try:
+            client = get_client()
+            response = client.messages.create(
+                model="claude-haiku-4-5-20251001",
+                max_tokens=500,
+                system="""You are InterOrdra's Question Reframe engine.
 Given a question, generate exactly 3 alternative framings that surface the real underlying need.
 Respond only in JSON format:
 {
@@ -185,31 +199,38 @@ Respond only in JSON format:
 }
 The reframings should: explore context, uncover root cause, and find alternative paths.
 Respond in the same language as the input question.""",
-            messages=[{"role": "user", "content": pregunta}]
-        )
+                messages=[{"role": "user", "content": pregunta}]
+            )
 
-        import json
-        content = response.content[0].text
-        parsed = json.loads(content)
-        variantes = parsed.get("variantes", [])
+            import json
+            content = response.content[0].text
+            parsed = json.loads(content)
+            variantes = parsed.get("variantes", [])
 
-    except Exception:
-        # Fallback to template-based reframing
-        pregunta_lower = pregunta.lower().strip()
-        variantes = [
-            f"¿Qué significa exactamente '{pregunta_lower}' en este contexto?",
-            f"¿Cuál es el problema de fondo detrás de: '{pregunta_lower}'?",
-            f"Si '{pregunta_lower}' no es posible, ¿qué alternativa resolvería la necesidad real?",
-        ]
+        except Exception:
+            # Fallback to template-based reframing
+            pregunta_lower = pregunta.lower().strip()
+            variantes = [
+                f"¿Qué significa exactamente '{pregunta_lower}' en este contexto?",
+                f"¿Cuál es el problema de fondo detrás de: '{pregunta_lower}'?",
+                f"Si '{pregunta_lower}' no es posible, ¿qué alternativa resolvería la necesidad real?",
+            ]
 
-    return {
-        "pregunta_original": pregunta,
-        "variantes": variantes,
-        "instruccion": "Usa estas variantes para explorar el gap entre lo que se pregunta y lo que se necesita."
-    }
+        return {
+            "pregunta_original": pregunta,
+            "variantes": variantes,
+            "instruccion": "Usa estas variantes para explorar el gap entre lo que se pregunta y lo que se necesita."
+        }
+    except Exception as e:
+        return {"error": True, "mensaje": f"Error al reformular la pregunta: {e}"}
 
 
-@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True))
+@mcp.tool(annotations=ToolAnnotations(
+    readOnlyHint=True,
+    destructiveHint=False,
+    idempotentHint=True,
+    openWorldHint=True,
+))
 def analizar_conversacion(
     mensajes: Annotated[list[str], Field(description="List of messages in chronological order. Minimum 2 messages required. Each message should be a string representing one turn in the conversation.")],
 ) -> dict:
@@ -219,32 +240,35 @@ def analizar_conversacion(
     Pass a list of messages in chronological order.
     Requires ANTHROPIC_API_KEY environment variable.
     """
-    if len(mensajes) < 2:
-        return {"error": "Se necesitan al menos 2 mensajes para analizar una conversación."}
+    try:
+        if len(mensajes) < 2:
+            return {"error": True, "mensaje": "Se necesitan al menos 2 mensajes para analizar una conversación."}
 
-    gaps = []
-    for i in range(len(mensajes) - 1):
-        similarity = semantic_similarity(mensajes[i], mensajes[i + 1])
-        gap = round(1 - similarity, 2)
-        gaps.append({
-            "entre_mensajes": f"{i+1} y {i+2}",
-            "gap_score": gap,
-            "nivel": "alto" if gap >= 0.6 else "medio" if gap >= 0.3 else "bajo"
-        })
+        gaps = []
+        for i in range(len(mensajes) - 1):
+            similarity = semantic_similarity(mensajes[i], mensajes[i + 1])
+            gap = round(1 - similarity, 2)
+            gaps.append({
+                "entre_mensajes": f"{i+1} y {i+2}",
+                "gap_score": gap,
+                "nivel": "alto" if gap >= 0.6 else "medio" if gap >= 0.3 else "bajo"
+            })
 
-    avg_gap = round(sum(g["gap_score"] for g in gaps) / len(gaps), 2)
-    max_gap = max(gaps, key=lambda x: x["gap_score"])
+        avg_gap = round(sum(g["gap_score"] for g in gaps) / len(gaps), 2)
+        max_gap = max(gaps, key=lambda x: x["gap_score"])
 
-    return {
-        "gaps_detectados": gaps,
-        "gap_promedio": avg_gap,
-        "punto_critico": max_gap,
-        "diagnostico": (
-            "Conversación coherente" if avg_gap < 0.3
-            else "Deriva semántica moderada" if avg_gap < 0.6
-            else "Conversación gravemente desacoplada"
-        )
-    }
+        return {
+            "gaps_detectados": gaps,
+            "gap_promedio": avg_gap,
+            "punto_critico": max_gap,
+            "diagnostico": (
+                "Conversación coherente" if avg_gap < 0.3
+                else "Deriva semántica moderada" if avg_gap < 0.6
+                else "Conversación gravemente desacoplada"
+            )
+        }
+    except Exception as e:
+        return {"error": True, "mensaje": f"Error al analizar la conversación: {e}"}
 
 
 @mcp.prompt
