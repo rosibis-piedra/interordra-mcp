@@ -13,6 +13,7 @@ short_description: Semantic gap detection tool for AI agents
 
 [![smithery badge](https://smithery.ai/badge/rosibisdev/interordra-mcp)](https://smithery.ai/servers/rosibisdev/interordra-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![M8ven Score](https://m8ven.ai/badge/mcp/rosibis-piedra-interordra-mcp-0mmpvd)](https://m8ven.ai/mcp/rosibis-piedra-interordra-mcp-0mmpvd)
 
 **Measure semantic distance between texts. Detect misalignment before it becomes a problem.**
 
